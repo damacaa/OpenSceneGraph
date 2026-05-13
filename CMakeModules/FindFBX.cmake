@@ -34,6 +34,8 @@ ELSEIF(MSVC_VERSION GREATER_EQUAL 1910 AND MSVC_VERSION LESS 1920)
 ELSEIF(MSVC_VERSION GREATER_EQUAL 1920 AND MSVC_VERSION LESS 1930)
 #   SET(FBX_LIBDIR "vs2019") # FBX doesn't have this yet as of version 2020.0.1
     SET(FBX_LIBDIR "vs2017") # Binary compatible with vs2019
+ELSEIF(MSVC_VERSION GREATER_EQUAL 1930)
+    SET(FBX_LIBDIR "vs2022")
 ENDIF()
 
 IF(APPLE)
@@ -69,6 +71,12 @@ SET(FBX_LIBNAME_DEBUG ${FBX_LIBNAME}d)
 
 SET( FBX_SEARCH_PATHS
     $ENV{FBX_DIR}
+    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2020.3.9"
+    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.3.9"
+    "/Applications/Autodesk/FBX SDK/2020.3.9"
+    "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2020.1.1"
+    "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.1.1"
+    "/Applications/Autodesk/FBX SDK/2020.1.1"
     "$ENV{ProgramW6432}/Autodesk/FBX/FBX SDK/2020.0.1"
     "$ENV{PROGRAMFILES}/Autodesk/FBX/FBX SDK/2020.0.1"
     "/Applications/Autodesk/FBX SDK/2020.0.1"
@@ -120,31 +128,31 @@ FIND_PATH(FBX_INCLUDE_DIR "fbxsdk.h"
     PATH_SUFFIXES "include")
 FIND_LIBRARY( FBX_LIBRARY ${FBX_LIBNAME}
     PATHS ${FBX_SEARCH_PATHS}
-    PATH_SUFFIXES "lib/${FBX_LIBDIR}/release" "lib/${FBX_LIBDIR}")
+    PATH_SUFFIXES "lib/${FBX_LIBDIR}/release" "lib/x64/release" "lib/${FBX_LIBDIR}")
 
 #Once one of the calls succeeds the result variable will be set and stored in the cache so that no call will search again.
 
 #no debug d suffix, search in debug folder only
 FIND_LIBRARY( FBX_LIBRARY_DEBUG ${FBX_LIBNAME}
     PATHS ${FBX_SEARCH_PATHS}
-    PATH_SUFFIXES "lib/${FBX_LIBDIR}/debug")
+    PATH_SUFFIXES "lib/${FBX_LIBDIR}/debug" "lib/x64/debug")
 FIND_LIBRARY( FBX_LIBRARY_DEBUG ${FBX_LIBNAME_DEBUG}
     PATHS ${FBX_SEARCH_PATHS}
-    PATH_SUFFIXES "lib/${FBX_LIBDIR}")
+    PATH_SUFFIXES "lib/${FBX_LIBDIR}" "lib/x64")
 
 IF(WIN32)
     FIND_LIBRARY( FBX_XML2_LIBRARY ${FBX_XML2_LIBNAME}
         PATHS ${FBX_SEARCH_PATHS}
-        PATH_SUFFIXES "lib/${FBX_LIBDIR}/release" "lib/${FBX_LIBDIR}")
+        PATH_SUFFIXES "lib/${FBX_LIBDIR}/release" "lib/x64/release" "lib/${FBX_LIBDIR}")
     FIND_LIBRARY( FBX_ZLIB_LIBRARY ${FBX_ZLIB_LIBNAME}
         PATHS ${FBX_SEARCH_PATHS}
-        PATH_SUFFIXES "lib/${FBX_LIBDIR}/release" "lib/${FBX_LIBDIR}")
+        PATH_SUFFIXES "lib/${FBX_LIBDIR}/release" "lib/x64/release" "lib/${FBX_LIBDIR}")
     FIND_LIBRARY( FBX_XML2_LIBRARY_DEBUG ${FBX_XML2_LIBNAME}
         PATHS ${FBX_SEARCH_PATHS}
-        PATH_SUFFIXES "lib/${FBX_LIBDIR}/debug")
+        PATH_SUFFIXES "lib/${FBX_LIBDIR}/debug" "lib/x64/debug")
     FIND_LIBRARY( FBX_ZLIB_LIBRARY_DEBUG ${FBX_ZLIB_LIBNAME}
         PATHS ${FBX_SEARCH_PATHS}
-        PATH_SUFFIXES "lib/${FBX_LIBDIR}/debug")
+        PATH_SUFFIXES "lib/${FBX_LIBDIR}/debug" "lib/x64/debug")
 ENDIF()
 
 IF(FBX_LIBRARY AND FBX_LIBRARY_DEBUG AND FBX_INCLUDE_DIR)
