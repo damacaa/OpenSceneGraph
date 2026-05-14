@@ -20,14 +20,14 @@
 class ConsistentManipulator : public osgGA::OrbitManipulator
 {
 public:
-	// World-unit thresholds tuned for 1000×-scaled FBX imports.
-	static constexpr double MIN_PAN_DIST = 100.0; // never slower than this for pan
-	static constexpr double MIN_ZOOM_STEP = 1.0;  // never smaller than this per scroll tick
+	// World-unit thresholds for unscaled FBX imports.
+	static constexpr double MIN_PAN_DIST = 0.001; // never slower than this for pan
+	static constexpr double MIN_ZOOM_STEP = 0.00001;  // never smaller than this per scroll tick
 	static constexpr double ZOOM_FACTOR = 0.12;   // proportional portion (12 % per tick)
 
 	ConsistentManipulator()
 	{
-		setMinimumDistance(1.0, false); // absolute, not relative to model size
+		setMinimumDistance(0.001, false); // absolute, not relative to model size
 		setVerticalAxisFixed(true);
 		setAllowThrow(false);
 	}
@@ -35,7 +35,7 @@ public:
 	void setNode(osg::Node* node) override
 	{
 		osgGA::OrbitManipulator::setNode(node);
-		setMinimumDistance(1.0, false);
+		setMinimumDistance(0.001, false);
 	}
 
 protected:
@@ -64,7 +64,7 @@ protected:
 		double step = std::max(MIN_ZOOM_STEP, _distance * ZOOM_FACTOR);
 		auto sm = ea.getScrollingMotion();
 		if (sm == osgGA::GUIEventAdapter::SCROLL_UP)
-			_distance = std::max(1.0, _distance - step);
+			_distance = std::max(getMinimumDistance(), _distance - step);
 		else if (sm == osgGA::GUIEventAdapter::SCROLL_DOWN)
 			_distance += step;
 		else
