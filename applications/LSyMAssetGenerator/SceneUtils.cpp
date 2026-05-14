@@ -9,6 +9,7 @@
 #include <osg/PrimitiveSet>
 #include <osg/StateSet>
 #include <osgDB/ReadFile>
+#include <osgAnimation/BasicAnimationManager>
 #include <osgUtil/Optimizer>
 #include <algorithm>
 #include <cmath>
@@ -72,6 +73,31 @@ osg::ref_ptr<osg::Node> loadAndProcessScene(const std::string& path)
 	osg::ref_ptr<osg::Node> scene = osgDB::readNodeFile(path);
 	if (!scene.valid())
 		return {};
+
+	// The FBX plugin attaches BasicAnimationManager as an update callback on
+	// the root or on a child node (when an axis-correction MatrixTransform wraps
+	// it). Walk the whole tree to find it, then start all registered animations.
+	struct FindAnimMgr : public osg::NodeVisitor
+	{
+		osgAnimation::BasicAnimationManager* mgr = nullptr;
+		FindAnimMgr() : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN) {}
+		void apply(osg::Node& n) override
+		{
+			if (!mgr)
+				mgr = dynamic_cast<osgAnimation::BasicAnimationManager*>(
+					n.getUpdateCallback());
+			traverse(n);
+		}
+	};
+
+	FindAnimMgr finder;
+	scene->accept(finder);
+	if (finder.mgr)
+		for (auto& anim : finder.mgr->getAnimationList())
+		{
+			anim->setPlayMode(osgAnimation::Animation::LOOP);
+			finder.mgr->playAnimation(anim.get());
+		}
 
 	return scene;
 }

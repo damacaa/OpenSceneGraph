@@ -8,4 +8,6 @@ SET(TARGET_SRC
     PanelHandler.cpp
 )
 
+SET(TARGET_ADDED_LIBRARIES osgAnimation)
+
 SETUP_APPLICATION(LSyMAssetGenerator)
