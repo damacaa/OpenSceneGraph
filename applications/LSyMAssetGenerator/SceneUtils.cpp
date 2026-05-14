@@ -74,6 +74,16 @@ osg::ref_ptr<osg::Node> loadAndProcessScene(const std::string& path)
 	if (!scene.valid())
 		return {};
 
+	// Name the root node after the bare filename (no path, no extension)
+	{
+		std::string name = path;
+		size_t slash = name.find_last_of("/\\");
+		if (slash != std::string::npos) name = name.substr(slash + 1);
+		size_t dot = name.rfind('.');
+		if (dot != std::string::npos) name = name.substr(0, dot);
+		scene->setName(name);
+	}
+
 	// The FBX plugin attaches BasicAnimationManager as an update callback on
 	// the root or on a child node (when an axis-correction MatrixTransform wraps
 	// it). Walk the whole tree to find it, then start all registered animations.
