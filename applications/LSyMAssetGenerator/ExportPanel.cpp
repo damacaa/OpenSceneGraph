@@ -136,6 +136,7 @@ void ExportPanel::setDrawableCount(int n)
 
 void ExportPanel::onResize(int w, int h)
 {
+	if (w <= 0 || h <= 0) return;
 	_winW = w;
 	_winH = h;
 	_hudCamera->setProjectionMatrixAsOrtho2D(0, w, 0, h);

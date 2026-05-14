@@ -19,7 +19,7 @@ osg::Camera* HierarchyPanel::getCamera() { return _hudCamera.get(); }
 
 int HierarchyPanel::listAreaTop() const { return _winH - HEADER_H - LOAD_H; }
 int HierarchyPanel::listAreaBottom() const { return RP_PAD; }
-int HierarchyPanel::listAreaH() const { return listAreaTop() - listAreaBottom(); }
+int HierarchyPanel::listAreaH() const { return std::max(0, listAreaTop() - listAreaBottom()); }
 int HierarchyPanel::totalListH() const { return static_cast<int>(_items.size()) * ITEM_H; }
 int HierarchyPanel::maxScroll() const { return std::max(0, totalListH() - listAreaH()); }
 
@@ -91,6 +91,7 @@ void HierarchyPanel::scrollToSelected()
 
 void HierarchyPanel::onResize(int w, int h)
 {
+	if (w <= 0 || h <= 0) return;
 	_winW = w;
 	_winH = h;
 	_hudCamera->setProjectionMatrixAsOrtho2D(0, w, 0, h);

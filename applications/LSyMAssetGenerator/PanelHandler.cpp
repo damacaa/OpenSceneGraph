@@ -258,8 +258,12 @@ bool ResizeHandler::handle(const osgGA::GUIEventAdapter& ea,
 	if (ea.getEventType() == osgGA::GUIEventAdapter::RESIZE)
 	{
 		int nw = (int)ea.getWindowWidth();
-		int nh = (int)ea.getWindowHeight();
-		_cam3D->setViewport(PANEL_W, 0, nw - PANEL_W - RPANEL_W, nh);
+		int nh = std::max(1, (int)ea.getWindowHeight());
+		int vw = std::max(1, nw - PANEL_W - RPANEL_W);
+		_cam3D->setViewport(PANEL_W, 0, vw, nh);
+		double fovY = 45.0;
+		double ar = (double)vw / (double)nh;
+		_cam3D->setProjectionMatrixAsPerspective(fovY, ar, 0.1, 1e6);
 	}
 	return false;
 }
