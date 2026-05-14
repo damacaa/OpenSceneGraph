@@ -173,4 +173,127 @@ public:
 
 REGISTER_COMPRESSOR( "zlib", ZLibCompressor )
 
+// Fast zlib compressor – level 1 (smallest CPU hit, ~20-30% less compression ratio than default)
+class ZLibFastCompressor : public BaseCompressor
+{
+public:
+    ZLibFastCompressor() {}
+
+    virtual bool compress( std::ostream& fout, const std::string& src )
+    {
+        int ret, flush = Z_FINISH;
+        unsigned have;
+        z_stream strm;
+        unsigned char out[CHUNK];
+
+        strm.zalloc = Z_NULL; strm.zfree = Z_NULL; strm.opaque = Z_NULL;
+        ret = deflateInit2( &strm, 1, Z_DEFLATED, 15+16, 8, Z_DEFAULT_STRATEGY );
+        if ( ret != Z_OK ) return false;
+
+        strm.avail_in = src.size();
+        strm.next_in  = (Bytef*)( &(*src.begin()) );
+        do {
+            strm.avail_out = CHUNK; strm.next_out = out;
+            ret = deflate(&strm, flush);
+            if ( ret == Z_STREAM_ERROR ) { deflateEnd(&strm); return false; }
+            have = CHUNK - strm.avail_out;
+            if ( have>0 ) fout.write( (const char*)out, have );
+            if ( fout.fail() ) { deflateEnd(&strm); return false; }
+        } while ( strm.avail_out==0 );
+        deflateEnd(&strm);
+        return true;
+    }
+
+    virtual bool decompress( std::istream& fin, std::string& target )
+    {
+        // Reuse the same inflate path as ZLibCompressor
+        int ret; unsigned have;
+        z_stream strm;
+        unsigned char in[CHUNK], out[CHUNK];
+        strm.zalloc = Z_NULL; strm.zfree = Z_NULL; strm.opaque = Z_NULL;
+        strm.avail_in = 0; strm.next_in = Z_NULL;
+        ret = inflateInit2( &strm, 15 + 32 );
+        if ( ret != Z_OK ) return false;
+        do {
+            fin.read( (char*)in, CHUNK );
+            strm.avail_in = fin.gcount();
+            if ( strm.avail_in == 0 ) break;
+            strm.next_in = in;
+            do {
+                strm.avail_out = CHUNK; strm.next_out = out;
+                ret = inflate( &strm, Z_NO_FLUSH );
+                if ( ret==Z_NEED_DICT || ret==Z_DATA_ERROR || ret==Z_MEM_ERROR )
+                { inflateEnd(&strm); return false; }
+                have = CHUNK - strm.avail_out;
+                target.append( (char*)out, have );
+            } while ( strm.avail_out==0 );
+        } while ( ret!=Z_STREAM_END );
+        inflateEnd(&strm);
+        return ret==Z_STREAM_END;
+    }
+};
+
+REGISTER_COMPRESSOR( "zlib_fast", ZLibFastCompressor )
+
+// Best zlib compressor – level 9 (maximum compression ratio, slower write)
+class ZLibBestCompressor : public BaseCompressor
+{
+public:
+    ZLibBestCompressor() {}
+
+    virtual bool compress( std::ostream& fout, const std::string& src )
+    {
+        int ret, flush = Z_FINISH;
+        unsigned have;
+        z_stream strm;
+        unsigned char out[CHUNK];
+
+        strm.zalloc = Z_NULL; strm.zfree = Z_NULL; strm.opaque = Z_NULL;
+        ret = deflateInit2( &strm, 9, Z_DEFLATED, 15+16, 9, Z_DEFAULT_STRATEGY );
+        if ( ret != Z_OK ) return false;
+
+        strm.avail_in = src.size();
+        strm.next_in  = (Bytef*)( &(*src.begin()) );
+        do {
+            strm.avail_out = CHUNK; strm.next_out = out;
+            ret = deflate(&strm, flush);
+            if ( ret == Z_STREAM_ERROR ) { deflateEnd(&strm); return false; }
+            have = CHUNK - strm.avail_out;
+            if ( have>0 ) fout.write( (const char*)out, have );
+            if ( fout.fail() ) { deflateEnd(&strm); return false; }
+        } while ( strm.avail_out==0 );
+        deflateEnd(&strm);
+        return true;
+    }
+
+    virtual bool decompress( std::istream& fin, std::string& target )
+    {
+        int ret; unsigned have;
+        z_stream strm;
+        unsigned char in[CHUNK], out[CHUNK];
+        strm.zalloc = Z_NULL; strm.zfree = Z_NULL; strm.opaque = Z_NULL;
+        strm.avail_in = 0; strm.next_in = Z_NULL;
+        ret = inflateInit2( &strm, 15 + 32 );
+        if ( ret != Z_OK ) return false;
+        do {
+            fin.read( (char*)in, CHUNK );
+            strm.avail_in = fin.gcount();
+            if ( strm.avail_in == 0 ) break;
+            strm.next_in = in;
+            do {
+                strm.avail_out = CHUNK; strm.next_out = out;
+                ret = inflate( &strm, Z_NO_FLUSH );
+                if ( ret==Z_NEED_DICT || ret==Z_DATA_ERROR || ret==Z_MEM_ERROR )
+                { inflateEnd(&strm); return false; }
+                have = CHUNK - strm.avail_out;
+                target.append( (char*)out, have );
+            } while ( strm.avail_out==0 );
+        } while ( ret!=Z_STREAM_END );
+        inflateEnd(&strm);
+        return ret==Z_STREAM_END;
+    }
+};
+
+REGISTER_COMPRESSOR( "zlib_best", ZLibBestCompressor )
+
 #endif
