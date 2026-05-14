@@ -32,6 +32,10 @@ public:
 		setAllowThrow(false);
 	}
 
+	// Call this when the export axis setting changes so the orbit
+	// vertical matches the model's native up direction.
+	void setModelIsYUp(bool yUp) { _yUp = yUp; }
+
 	void setNode(osg::Node* node) override
 	{
 		osgGA::OrbitManipulator::setNode(node);
@@ -39,6 +43,30 @@ public:
 	}
 
 protected:
+	bool _yUp = false;
+
+	// Left-drag orbits — yaw axis follows the model's native up direction.
+	bool performMovementLeftMouseButton(const double td,
+		const double dx, const double dy) override
+	{
+		if (getVerticalAxisFixed())
+		{
+			const osg::Vec3f up = _yUp ? osg::Vec3f(0.f, 1.f, 0.f) : osg::Vec3f(0.f, 0.f, 1.f);
+			// Clamp pitch so the camera never reaches the poles, which causes the
+			// fixVerticalAxis flip-over correction to fire and produce rapid jitter.
+			static constexpr double MAX_ELEV = 1.54;  // ~88 degrees in radians
+			osg::Vec3d forward = _rotation * osg::Vec3d(0.0, 0.0, -1.0);
+			double elev = std::asin(osg::clampBetween(forward * osg::Vec3d(up), -1.0, 1.0));
+			double clampedDy = osg::clampBetween((double)dy, -MAX_ELEV - elev, MAX_ELEV - elev);
+			rotateWithFixedVertical((float)dx, (float)clampedDy, up);
+		}
+		else
+			rotateTrackball(_ga_t0->getXnormalized(), _ga_t0->getYnormalized(),
+				_ga_t1->getXnormalized(), _ga_t1->getYnormalized(),
+				getThrowScale(td));
+		return true;
+	}
+
 	// Pan (middle button) — clamped minimum effective distance
 	bool performMovementMiddleMouseButton(const double td,
 		const double dx, const double dy) override

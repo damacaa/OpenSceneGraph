@@ -85,6 +85,10 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 				else
 				{
 					_exportPanel->handleHit(hit, _scene.get());
+					if (hit == ExportPanel::EP_HIT_AXIS_Y2Z)
+						_manip->setModelIsYUp(true);
+					else if (hit == ExportPanel::EP_HIT_AXIS_Z2Y || hit == ExportPanel::EP_HIT_AXIS_NONE)
+						_manip->setModelIsYUp(false);
 				}
 			}
 			return true;
