@@ -6,6 +6,8 @@ SET(TARGET_SRC
     HierarchyPanel.cpp
     ExportPanel.cpp
     PanelHandler.cpp
+    NodeUserData.cpp
+    UserDataPanel.cpp
 )
 
 SET(TARGET_ADDED_LIBRARIES osgAnimation)

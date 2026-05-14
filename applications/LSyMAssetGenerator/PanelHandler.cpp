@@ -1,5 +1,6 @@
 #include "PanelHandler.h"
 #include "FileDialogs.h"
+#include "NodeUserData.h"
 #include <osg/Material>
 #include <osg/StateSet>
 #include <osgUtil/IntersectionVisitor>
@@ -10,11 +11,13 @@
 
 PanelHandler::PanelHandler(HierarchyPanel* panel,
 	ExportPanel* exportPanel,
+	UserDataPanel* udPanel,
 	ConsistentManipulator* manip,
 	osg::Node* scene,
 	osg::Group* selectionGroup,
 	osg::Group* root)
-	: _panel(panel), _exportPanel(exportPanel), _manip(manip), _scene(scene), _selectionGroup(selectionGroup), _root(root)
+	: _panel(panel), _exportPanel(exportPanel), _udPanel(udPanel),
+	  _manip(manip), _scene(scene), _selectionGroup(selectionGroup), _root(root)
 {
 }
 
@@ -23,7 +26,8 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 {
 	const int sx = (int)ea.getX();
 	const int sy = (int)ea.getY();
-	const bool inLeft = sx >= 0 && sx < PANEL_W;
+	const bool inLeft  = sx >= 0 && sx < PANEL_W;
+	const bool inUD    = sx >= (_winW - RPANEL_W - UDPANEL_W) && sx < (_winW - RPANEL_W);
 	const bool inRight = sx >= (_winW - RPANEL_W) && sx < _winW;
 
 	switch (ea.getEventType())
@@ -57,8 +61,16 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 					focusCamera(item->node.get(), _manip.get(), _scene.get());
 					_updateSelectionBox(item->node.get());
 					_applyTint(item->node.get());
+					_notifyNodeSelected(item->node.get());
 				}
 			}
+			return true;
+		}
+		if (inUD)
+		{
+			int hit = _udPanel->hitTest(sx, sy);
+			if (hit != UserDataPanel::UDP_HIT_NONE)
+				_udPanel->handleHit(hit);
 			return true;
 		}
 		if (inRight)
@@ -102,7 +114,7 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 		break;
 
 	case osgGA::GUIEventAdapter::RELEASE:
-		if (!inLeft && !inRight && ea.getButton() == osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON && sx == _pushX && sy == _pushY)
+		if (!inLeft && !inUD && !inRight && ea.getButton() == osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON && sx == _pushX && sy == _pushY)
 		{
 			_pick3D(sx, sy, aa);
 		}
@@ -113,7 +125,7 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 	case osgGA::GUIEventAdapter::DRAG:
 		_exportPanel->setExportHovered(
 			inRight && sy >= 0 && sy < RP_EXPORT_H);
-		if (inLeft || inRight)
+		if (inLeft || inUD || inRight)
 			return true;
 		break;
 
@@ -123,10 +135,21 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 		int nh = (int)ea.getWindowHeight();
 		_panel->onResize(_winW, nh);
 		_exportPanel->onResize(_winW, nh);
+		_udPanel->onResize(_winW, nh);
 		break;
 	}
 
 	case osgGA::GUIEventAdapter::KEYDOWN:
+		// Route printable keys + backspace to the UserDataPanel when it has focus
+		if (_udPanel && _udPanel->hasFocus())
+		{
+			int key = ea.getKey();
+			if (key == osgGA::GUIEventAdapter::KEY_BackSpace)
+				_udPanel->backspace();
+			else if (key >= 32 && key < 127)
+				_udPanel->appendChar(static_cast<char>(key));
+			return true;
+		}
 		if (ea.getKey() == 's' || ea.getKey() == 'S')
 		{
 			_statsVisible = !_statsVisible;
@@ -177,6 +200,7 @@ void PanelHandler::_pick3D(int sx, int sy, osgGA::GUIActionAdapter& aa)
 				_manip->setCenter(hit.getWorldIntersectPoint());
 				_updateSelectionBox(item->node.get());
 				_applyTint(item->node.get());
+				_notifyNodeSelected(item->node.get());
 			}
 			return;
 		}
@@ -200,8 +224,12 @@ void PanelHandler::_loadFile()
 	_root->replaceChild(_scene.get(), newScene.get());
 	_scene = newScene;
 
+	_sourcePath = path;
+	_exportPanel->setSourcePath(path);
+
 	_selectionGroup->removeChildren(0, _selectionGroup->getNumChildren());
 	_removeTint();
+	_udPanel->clearSelection();
 
 	HierarchyVisitor hv;
 	_scene->accept(hv);
@@ -252,6 +280,15 @@ void PanelHandler::_removeTint()
 	_tintMat = nullptr;
 }
 
+void PanelHandler::_notifyNodeSelected(osg::Node* node)
+{
+	if (!_udPanel || _sourcePath.empty())
+		return;
+	std::string name = node ? node->getName() : std::string{};
+	_udPanel->setSelectedNode(name, _scene.get(),
+		getUserDataJsonPath(_sourcePath));
+}
+
 // ─── ResizeHandler ────────────────────────────────────────────────────────────
 
 ResizeHandler::ResizeHandler(osg::Camera* cam3D) : _cam3D(cam3D) {}
@@ -263,7 +300,7 @@ bool ResizeHandler::handle(const osgGA::GUIEventAdapter& ea,
 	{
 		int nw = (int)ea.getWindowWidth();
 		int nh = std::max(1, (int)ea.getWindowHeight());
-		int vw = std::max(1, nw - PANEL_W - RPANEL_W);
+		int vw = std::max(1, nw - PANEL_W - RPANEL_W - UDPANEL_W);
 		_cam3D->setViewport(PANEL_W, 0, vw, nh);
 		double fovY = 45.0;
 		double ar = (double)vw / (double)nh;

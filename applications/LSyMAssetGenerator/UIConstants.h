@@ -5,6 +5,7 @@
 
 static const int PANEL_W = 320;
 static const int RPANEL_W = 280;
+static const int UDPANEL_W = 260;
 static const int HEADER_H = 44;
 static const int LOAD_H = 36;
 static const int ITEM_H = 22;

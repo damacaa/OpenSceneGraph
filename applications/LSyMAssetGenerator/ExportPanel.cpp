@@ -551,6 +551,14 @@ void ExportPanel::_doExport(osg::Node* scene)
 		OSG_NOTICE << "[Optimizer] vertices:  " << before.vertices << " -> " << after.vertices << std::endl;
 	}
 
+	// Apply user data from sidecar JSON (if any) before writing
+	if (!_sourcePath.empty())
+	{
+		NodeUserDataMap userData = loadUserDataJson(getUserDataJsonPath(_sourcePath));
+		if (!userData.empty())
+			applyUserDataToScene(out.get(), userData);
+	}
+
 	osg::ref_ptr<osgDB::ReaderWriter::Options> opts = _settings.makeOptions();
 	if (osgDB::writeNodeFile(*out, outPath, opts.get()))
 		OSG_NOTICE << "Export OK: " << outPath << std::endl;

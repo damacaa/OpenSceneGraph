@@ -1,6 +1,7 @@
 #pragma once
 #include "UIConstants.h"
 #include "ExportSettings.h"
+#include "NodeUserData.h"
 #include <osg/Camera>
 #include <osg/Geode>
 #include <osg/Node>
@@ -43,6 +44,7 @@ public:
 	void handleHit(int code, osg::Node* scene);
 	void setExportHovered(bool h);
 	void setDrawableCount(int n);
+	void setSourcePath(const std::string& path) { _sourcePath = path; }
 	void onResize(int w, int h);
 
 private:
@@ -53,6 +55,7 @@ private:
 
 	int _winW, _winH;
 	int _drawableCount;
+	std::string _sourcePath;
 	bool _exportHovered;
 	ExportSettings _settings;
 	std::vector<HitZone> _hitZones;

@@ -1,6 +1,7 @@
 #pragma once
 #include "HierarchyPanel.h"
 #include "ExportPanel.h"
+#include "UserDataPanel.h"
 #include "ConsistentManipulator.h"
 #include "SceneUtils.h"
 #include "UIConstants.h"
@@ -10,12 +11,14 @@
 #include <osg/Material>
 #include <osg/Node>
 #include <osg/ref_ptr>
+#include <string>
 
 class PanelHandler : public osgGA::GUIEventHandler
 {
 public:
 	PanelHandler(HierarchyPanel* panel,
 		ExportPanel* exportPanel,
+		UserDataPanel* udPanel,
 		ConsistentManipulator* manip,
 		osg::Node* scene,
 		osg::Group* selectionGroup,
@@ -30,19 +33,22 @@ private:
 	void _applyTint(osg::Node* node);
 	void _removeTint();
 	void _pick3D(int sx, int sy, osgGA::GUIActionAdapter& aa);
+	void _notifyNodeSelected(osg::Node* node);
 
-	osg::ref_ptr<HierarchyPanel> _panel;
-	osg::ref_ptr<ExportPanel> _exportPanel;
+	osg::ref_ptr<HierarchyPanel>      _panel;
+	osg::ref_ptr<ExportPanel>         _exportPanel;
+	osg::ref_ptr<UserDataPanel>       _udPanel;
 	osg::ref_ptr<ConsistentManipulator> _manip;
-	osg::ref_ptr<osg::Node> _scene;
-	osg::ref_ptr<osg::Group> _selectionGroup;
-	osg::ref_ptr<osg::Group> _root;
-	osg::ref_ptr<osg::Node> _tintedNode;
-	osg::ref_ptr<osg::Material> _tintMat;
-	int _winW = 1440;
+	osg::ref_ptr<osg::Node>           _scene;
+	osg::ref_ptr<osg::Group>          _selectionGroup;
+	osg::ref_ptr<osg::Group>          _root;
+	osg::ref_ptr<osg::Node>           _tintedNode;
+	osg::ref_ptr<osg::Material>       _tintMat;
+	std::string _sourcePath;
+	int  _winW = 1440;
 	bool _statsVisible = false;
-	int _pushX = -1;
-	int _pushY = -1;
+	int  _pushX = -1;
+	int  _pushY = -1;
 };
 
 class ResizeHandler : public osgGA::GUIEventHandler
