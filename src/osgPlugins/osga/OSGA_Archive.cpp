@@ -59,6 +59,12 @@ Purpose:
 
     Great thanks to J.Tukanis and G. Sylvester-Bradley for figuring it out.
 */
+// _FPOSOFF was removed from Windows SDK 10.0.26100.0+; provide a portable fallback.
+// On MSVC, fpos_t is a plain __int64 so the offset equals the position value itself.
+#ifndef _FPOSOFF
+#  define _FPOSOFF(p) ((long long)(p))
+#endif
+
 #if ((defined(_YVALS) && !defined(__IBMCPP__)) || defined(_CPPLIB_VER)) && \
      !defined(__SGI_STL_PORT) && !defined(_STLPORT_VERSION) \
      && !defined(__QNX__)
