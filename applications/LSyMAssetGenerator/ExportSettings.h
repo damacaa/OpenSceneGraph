@@ -43,12 +43,12 @@ struct ExportSettings
     ImageMode imageMode = IMG_INLINE;
     Scale scale = SCALE_1;
     Axis axis = AXIS_NONE;
-    bool mergeGeom = false;
-    bool shareState = false;
-    bool tristrip = false;
-    bool flattenTransforms = false;
-    bool indexMesh = false;
-    bool removeRedundant = false;
+    bool mergeGeom = true;
+    bool shareState = true;
+    bool tristrip = true;
+    bool flattenTransforms = true;
+    bool indexMesh = true;
+    bool removeRedundant = true;
 
     std::string extension() const
     {

@@ -325,6 +325,22 @@ void ExportPanel::_buildScene()
 				_settings.imageMode == b[i].val);
 			_hitZones.push_back({ bx, y, bw3, RP_BTN_H, b[i].code });
 		}
+
+		y -= 20;
+
+		osg::Geode* hint = new osg::Geode;
+		hint->addDrawable(makeText("Inline: faster load, bigger file size",
+			(float)(px + RP_PAD), (float)(y + 2), FONT_SZ - 3.f, C_TEXT_DIM));
+		y -= 10;
+		hint->addDrawable(makeText("Inc.File: slightly slower load, smaller file size",
+			(float)(px + RP_PAD), (float)(y + 2), FONT_SZ - 3.f, C_TEXT_DIM));
+		y -= 10;
+		hint->addDrawable(makeText("External: textures as separate files, can be reused",
+			(float)(px + RP_PAD), (float)(y + 2), FONT_SZ - 3.f, C_TEXT_DIM));
+					y -= 10;
+		hint->addDrawable(makeText("               across multiple models",
+			(float)(px + RP_PAD), (float)(y + 2), FONT_SZ - 3.f, C_TEXT_DIM));
+		_hudCamera->addChild(hint);
 	}
 	y -= RP_SEP;
 	_addDivider(px, pw, y);
