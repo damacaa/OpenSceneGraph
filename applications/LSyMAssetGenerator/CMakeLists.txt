@@ -14,6 +14,20 @@ SET(TARGET_ADDED_LIBRARIES osgAnimation)
 
 SETUP_APPLICATION(LSyMAssetGenerator)
 
+# Ensure required plugins are built before the application
+if(TARGET osgdb_fbx)
+    add_dependencies(${TARGET_TARGETNAME} osgdb_fbx)
+endif()
+if(TARGET osgdb_png)
+    add_dependencies(${TARGET_TARGETNAME} osgdb_png)
+endif()
+if(TARGET osgdb_jpeg)
+    add_dependencies(${TARGET_TARGETNAME} osgdb_jpeg)
+endif()
+if(TARGET osgdb_freetype)
+    add_dependencies(${TARGET_TARGETNAME} osgdb_freetype)
+endif()
+
 # Copy 3rd-party dependency DLLs from the plugins directory to the executable directory
 # so that the OS can find them when the plugins are dynamically loaded.
 # Uses -ErrorAction SilentlyContinue to prevent build failure if a DLL is currently locked by a running process.
