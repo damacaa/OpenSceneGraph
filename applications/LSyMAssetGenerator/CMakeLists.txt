@@ -13,3 +13,12 @@ SET(TARGET_SRC
 SET(TARGET_ADDED_LIBRARIES osgAnimation)
 
 SETUP_APPLICATION(LSyMAssetGenerator)
+
+# Copy 3rd-party dependency DLLs from the plugins directory to the executable directory
+# so that the OS can find them when the plugins are dynamically loaded.
+# Uses -ErrorAction SilentlyContinue to prevent build failure if a DLL is currently locked by a running process.
+if(WIN32)
+    add_custom_command(TARGET ${TARGET_TARGETNAME} POST_BUILD
+        COMMAND powershell -NoProfile -Command "if (Test-Path -Path '$<TARGET_FILE_DIR:${TARGET_TARGETNAME}>/osgPlugins-${OPENSCENEGRAPH_VERSION}') { Get-ChildItem -Path '$<TARGET_FILE_DIR:${TARGET_TARGETNAME}>/osgPlugins-${OPENSCENEGRAPH_VERSION}/*.dll' -Exclude 'osgdb_*.dll' | Copy-Item -Destination '$<TARGET_FILE_DIR:${TARGET_TARGETNAME}>' -Force -ErrorAction SilentlyContinue }"
+    )
+endif()
