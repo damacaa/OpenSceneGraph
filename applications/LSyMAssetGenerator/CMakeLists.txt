@@ -34,8 +34,8 @@ if(TARGET osgdb_osg)
 endif()
 
 set(OSG_SERIALIZERS 
-    osg osgAnimation osgFX osgGA osgManipulator osgParticle 
-    osgShadow osgSim osgTerrain osgText osgUI osgUtil osgViewer osgVolume
+    osg osganimation osgfx osgga osgmanipulator osgparticle 
+    osgshadow osgsim osgterrain osgtext osgui osgutil osgviewer osgvolume
 )
 foreach(SER ${OSG_SERIALIZERS})
     if(TARGET osgdb_serializers_${SER})
