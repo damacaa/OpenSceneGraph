@@ -28,6 +28,21 @@ if(TARGET osgdb_freetype)
     add_dependencies(${TARGET_TARGETNAME} osgdb_freetype)
 endif()
 
+# Native OSG serializers and formats
+if(TARGET osgdb_osg)
+    add_dependencies(${TARGET_TARGETNAME} osgdb_osg)
+endif()
+
+set(OSG_SERIALIZERS 
+    osg osgAnimation osgFX osgGA osgManipulator osgParticle 
+    osgShadow osgSim osgTerrain osgText osgUI osgUtil osgViewer osgVolume
+)
+foreach(SER ${OSG_SERIALIZERS})
+    if(TARGET osgdb_serializers_${SER})
+        add_dependencies(${TARGET_TARGETNAME} osgdb_serializers_${SER})
+    endif()
+endforeach()
+
 # Copy 3rd-party dependency DLLs from the plugins directory to the executable directory
 # so that the OS can find them when the plugins are dynamically loaded.
 # Uses -ErrorAction SilentlyContinue to prevent build failure if a DLL is currently locked by a running process.
