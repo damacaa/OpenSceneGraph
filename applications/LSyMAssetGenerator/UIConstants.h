@@ -13,7 +13,7 @@ static const int INDENT_PX = 14;
 static const float FONT_SZ = 13.0f;
 
 // Right-panel layout
-static const int RP_EXPORT_H = 46;
+static const int RP_EXPORT_H = 92;
 static const int RP_PAD = 10;
 static const int RP_LABEL_H = 20;
 static const int RP_BTN_H = 28;

@@ -9,6 +9,7 @@
 #include <osg/MatrixTransform>
 #include <osgUtil/Optimizer>
 #include <osgText/Text>
+#include <fstream>
 
 ExportPanel::ExportPanel(int winW, int winH, int drawableCount)
 	: _winW(winW), _winH(winH), _drawableCount(drawableCount), _exportHovered(false)
@@ -27,7 +28,9 @@ int ExportPanel::hitTest(int sx, int sy) const
 		return EP_HIT_NONE;
 	if (sy < 0 || sy >= _winH)
 		return EP_HIT_NONE;
-	if (sy >= 0 && sy < RP_EXPORT_H)
+	if (sy >= 0 && sy < RP_EXPORT_H / 2)
+		return EP_HIT_EXPORT_DUMMIES;
+	if (sy >= RP_EXPORT_H / 2 && sy < RP_EXPORT_H)
 		return EP_HIT_EXPORT;
 	for (const auto& hz : _hitZones)
 		if (sx >= hz.x && sx < hz.x + hz.w && sy >= hz.y && sy < hz.y + hz.h)
@@ -108,6 +111,9 @@ void ExportPanel::handleHit(int code, osg::Node* scene)
 	case EP_HIT_EXPORT:
 		_doExport(scene);
 		return;
+	case EP_HIT_EXPORT_DUMMIES:
+		_doExportDummies(scene);
+		return;
 	default:
 		return;
 	}
@@ -122,6 +128,14 @@ void ExportPanel::setExportHovered(bool h)
 	if (_exportHovered == h)
 		return;
 	_exportHovered = h;
+	_rebuildExportButton();
+}
+
+void ExportPanel::setExportDummiesHovered(bool h)
+{
+	if (_exportDummiesHovered == h)
+		return;
+	_exportDummiesHovered = h;
 	_rebuildExportButton();
 }
 
@@ -435,8 +449,12 @@ void ExportPanel::_buildScene()
 	// Export button (pinned at bottom)
 	_exportBtnGeode = new osg::Geode;
 	_exportBtnTextGeode = new osg::Geode;
+	_exportDummiesBtnGeode = new osg::Geode;
+	_exportDummiesBtnTextGeode = new osg::Geode;
 	_hudCamera->addChild(_exportBtnGeode.get());
 	_hudCamera->addChild(_exportBtnTextGeode.get());
+	_hudCamera->addChild(_exportDummiesBtnGeode.get());
+	_hudCamera->addChild(_exportDummiesBtnTextGeode.get());
 	_rebuildExportButton();
 }
 
@@ -499,14 +517,27 @@ void ExportPanel::_rebuildExportButton()
 		return;
 	_exportBtnGeode->removeDrawables(0, _exportBtnGeode->getNumDrawables());
 	_exportBtnTextGeode->removeDrawables(0, _exportBtnTextGeode->getNumDrawables());
+	_exportDummiesBtnGeode->removeDrawables(0, _exportDummiesBtnGeode->getNumDrawables());
+	_exportDummiesBtnTextGeode->removeDrawables(0, _exportDummiesBtnTextGeode->getNumDrawables());
 
 	const int px = panelX();
+	int btnH = RP_EXPORT_H / 2;
+
 	_exportBtnGeode->addDrawable(
-		makeQuad((float)(px + RP_PAD), 5.f,
-			(float)(RPANEL_W - 2 * RP_PAD), (float)(RP_EXPORT_H - 10),
+		makeQuad((float)(px + RP_PAD), (float)(btnH + 5),
+			(float)(RPANEL_W - 2 * RP_PAD), (float)(btnH - 10),
 			_exportHovered ? C_EXPORT_HOV : C_EXPORT));
 	_exportBtnTextGeode->addDrawable(
 		makeText("Export" + _settings.extension(),
+			(float)(px + RPANEL_W / 2), (float)(btnH + 9),
+			FONT_SZ, C_TEXT, osgText::Text::CENTER_BOTTOM));
+
+	_exportDummiesBtnGeode->addDrawable(
+		makeQuad((float)(px + RP_PAD), 5.f,
+			(float)(RPANEL_W - 2 * RP_PAD), (float)(btnH - 10),
+			_exportDummiesHovered ? C_EXPORT_HOV : C_EXPORT));
+	_exportDummiesBtnTextGeode->addDrawable(
+		makeText("Export Dummies.dat",
 			(float)(px + RPANEL_W / 2), 9.f,
 			FONT_SZ, C_TEXT, osgText::Text::CENTER_BOTTOM));
 }
@@ -580,4 +611,62 @@ void ExportPanel::_doExport(osg::Node* scene)
 		OSG_NOTICE << "Export OK: " << outPath << std::endl;
 	else
 		OSG_WARN << "Export FAILED: " << outPath << std::endl;
+}
+
+namespace {
+	struct DummyVisitor : public osg::NodeVisitor
+	{
+		struct DummyInfo {
+			std::string name;
+			osg::Vec3d pos;
+		};
+		std::vector<DummyInfo> dummies;
+
+		DummyVisitor() : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN) {}
+
+		void apply(osg::MatrixTransform& mt) override
+		{
+			osg::Matrix m = mt.getMatrix();
+			osg::Vec3d pos = m.getTrans();
+
+			std::string name = mt.getName();
+			if (name.empty()) name = "Dummy_Unnamed";
+
+			dummies.push_back({name, pos});
+			traverse(mt);
+		}
+	};
+}
+
+void ExportPanel::_doExportDummies(osg::Node* scene)
+{
+	if (!scene)
+		return;
+
+	std::string outPath = saveFileDialog(".dat");
+	if (outPath.empty())
+		return;
+
+	OSG_NOTICE << "Exporting dummies to: " << outPath << std::endl;
+
+	DummyVisitor dv;
+	scene->accept(dv);
+
+	std::ofstream out(outPath);
+	if (!out)
+	{
+		OSG_WARN << "Failed to open " << outPath << " for writing." << std::endl;
+		return;
+	}
+
+	out << dv.dummies.size() << "\n";
+	for (const auto& dummy : dv.dummies)
+	{
+		out << dummy.name << "\t" 
+		    << dummy.pos.x() << "\t" 
+		    << dummy.pos.y() << "\t" 
+		    << dummy.pos.z() << "\n";
+	}
+
+	OSG_NOTICE << "Exported " << dv.dummies.size() << " dummies." << std::endl;
 }

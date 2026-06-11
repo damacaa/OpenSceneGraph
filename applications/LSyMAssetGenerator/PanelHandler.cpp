@@ -124,7 +124,9 @@ bool PanelHandler::handle(const osgGA::GUIEventAdapter& ea,
 	case osgGA::GUIEventAdapter::MOVE:
 	case osgGA::GUIEventAdapter::DRAG:
 		_exportPanel->setExportHovered(
-			inRight && sy >= 0 && sy < RP_EXPORT_H);
+			inRight && sy >= RP_EXPORT_H / 2 && sy < RP_EXPORT_H);
+		_exportPanel->setExportDummiesHovered(
+			inRight && sy >= 0 && sy < RP_EXPORT_H / 2);
 		if (inLeft || inUD || inRight)
 			return true;
 		break;
